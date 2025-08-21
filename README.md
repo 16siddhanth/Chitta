@@ -1,6 +1,6 @@
 # Chitta
 A Vedic-inspired mental wellness web app that helps users track emotions, gain insights, and receive guided interventions.
-# 🌿 Project Proposal: "Chitta" – A Vedic-Inspired Mental Wellbeing Web App  
+# 🌿 "Chitta" – A Vedic-Inspired Mental Wellbeing Web App  
 
 ## 🔮 Vision  
 **Chitta** is a Vedic-inspired mental wellness platform that blends ancient wisdom with modern technology to help users achieve emotional balance, self-awareness, and inner peace through personalized, secure, and intelligent experiences.  
