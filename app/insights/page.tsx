@@ -4,10 +4,13 @@ import { useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, Calendar, Target } from "lucide-react"
+import { ArrowLeft, TrendingUp, Calendar, Target, Activity } from "lucide-react"
 import Link from "next/link"
+import { formatDistanceToNow } from "date-fns"
+
 import { EmotionalTrends } from "@/components/emotional-trends"
 import { useEmotionalData } from "@/hooks/use-emotional-data"
+import { getInterventionDefinition } from "@/lib/interventions"
 
 const gunaLabels: Record<string, string> = {
   sattva: "Sattva",
@@ -16,8 +19,14 @@ const gunaLabels: Record<string, string> = {
 }
 
 export default function InsightsPage() {
-  const { trend, summary, latest, entries, isLoading } = useEmotionalData()
+  const { trend, summary, latest, entries, isLoading, sessionSummary, sessions } = useEmotionalData()
   const hasEntries = entries.length > 0
+  const hasPractices = sessions.length > 0
+
+  const recommendedDefinitions = (latest?.recommendedInterventionIds ?? [])
+    .map((id) => getInterventionDefinition(id))
+    .filter((definition): definition is NonNullable<typeof definition> => Boolean(definition))
+  const primaryRecommendation = recommendedDefinitions[0]
 
   const focusRecommendations = useMemo(() => {
     if (!hasEntries) {
@@ -54,14 +63,41 @@ export default function InsightsPage() {
       })
     }
 
+    if (sessionSummary.completedThisWeek === 0) {
+      recommendations.push({
+        title: "Bring in practices",
+        description: "Complete a micro-intervention to reinforce the shifts you're tracking.",
+      })
+    } else {
+      const gunaName = sessionSummary.topGuna ? gunaLabels[sessionSummary.topGuna] : "Your practices"
+      recommendations.push({
+        title: `${gunaName} support`,
+        description: "Keep leaning on the practices that are resonating this week.",
+      })
+    }
+
+    if (primaryRecommendation) {
+      recommendations.push({
+        title: "Suggested next step",
+        description: `Try “${primaryRecommendation.title}” to deepen today's integration.`,
+      })
+    }
+
     return recommendations
-  }, [hasEntries, latest, summary.balanceScore])
+  }, [
+    hasEntries,
+    latest,
+    summary.balanceScore,
+    sessionSummary.completedThisWeek,
+    sessionSummary.topGuna,
+    primaryRecommendation?.title,
+  ])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="mx-auto max-w-4xl">
-          <div className="mb-8 flex items-center gap-4">
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <Link href="/">
               <Button variant="ghost" size="sm">
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -69,14 +105,14 @@ export default function InsightsPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="font-serif text-2xl font-bold">Emotional Insights</h1>
-              <p className="text-muted-foreground">
+              <h1 className="font-serif text-xl sm:text-2xl font-bold">Emotional Insights</h1>
+              <p className="text-sm text-muted-foreground">
                 {hasEntries ? "Your journey of self-awareness" : "Check in daily to unlock personalized insights"}
               </p>
             </div>
           </div>
 
-          <div className="grid gap-6 lg:grid-cols-3">
+          <div className="grid gap-4 sm:gap-6 lg:grid-cols-3">
             <div className="lg:col-span-2">
               <EmotionalTrends data={trend} />
             </div>
@@ -84,17 +120,17 @@ export default function InsightsPage() {
             <div className="space-y-6">
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="font-serif text-lg flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-primary" />
+                  <CardTitle className="font-serif text-base sm:text-lg flex items-center gap-2">
+                    <Calendar className="h-4 sm:h-5 w-4 sm:w-5 text-primary" />
                     Check-in Streak
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-center">
-                    <div className="mb-1 text-3xl font-bold text-primary">
+                    <div className="mb-1 text-2xl sm:text-3xl font-bold text-primary">
                       {isLoading ? "…" : summary.streak || 0}
                     </div>
-                    <div className="text-sm text-muted-foreground">
+                    <div className="text-xs sm:text-sm text-muted-foreground">
                       {summary.streak === 1 ? "day so far" : "days in a row"}
                     </div>
                   </div>
@@ -103,8 +139,8 @@ export default function InsightsPage() {
 
               <Card>
                 <CardHeader className="pb-3">
-                  <CardTitle className="font-serif text-lg flex items-center gap-2">
-                    <TrendingUp className="h-5 w-5 text-secondary" />
+                  <CardTitle className="font-serif text-base sm:text-lg flex items-center gap-2">
+                    <TrendingUp className="h-4 sm:h-5 w-4 sm:w-5 text-secondary" />
                     This Week's Pattern
                   </CardTitle>
                 </CardHeader>
@@ -142,6 +178,58 @@ export default function InsightsPage() {
                       </div>
                     ))}
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader className="pb-3">
+                  <CardTitle className="font-serif text-base sm:text-lg flex items-center gap-2">
+                    <Activity className="h-4 sm:h-5 w-4 sm:w-5 text-primary" />
+                    Practice Activity
+                  </CardTitle>
+                  <CardDescription>
+                    {sessionSummary.completedThisWeek > 0
+                      ? "Logs from the past 7 days"
+                      : "Complete a practice to unlock trends"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {hasPractices ? (
+                    <div className="space-y-3 text-sm">
+                      <div className="flex items-center justify-between">
+                        <span>Completed this week</span>
+                        <span className="font-semibold">{sessionSummary.completedThisWeek}</span>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span>Minutes invested</span>
+                        <span className="font-semibold">{sessionSummary.totalMinutesThisWeek}</span>
+                      </div>
+                      {sessionSummary.topGuna && (
+                        <div className="flex items-center justify-between">
+                          <span>Most supported guna</span>
+                          <Badge variant="secondary" className="capitalize">
+                            {sessionSummary.topGuna}
+                          </Badge>
+                        </div>
+                      )}
+                      {sessionSummary.lastSession && (
+                        <div className="rounded-lg border border-dashed border-border p-3 text-xs text-muted-foreground">
+                          <span className="font-medium text-foreground">
+                            {sessionSummary.lastSession.definition?.title ?? "Recent practice"}
+                          </span>
+                          <span className="ml-1">
+                            {formatDistanceToNow(new Date(sessionSummary.lastSession.completedAt), {
+                              addSuffix: true,
+                            })}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-sm text-muted-foreground">
+                      Practices will appear here once you complete an intervention.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </div>

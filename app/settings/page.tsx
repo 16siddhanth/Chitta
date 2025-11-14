@@ -17,6 +17,7 @@ export default function SettingsPage() {
   const [dataSize, setDataSize] = useState<string>("0 KB")
   const [lastSync, setLastSync] = useState<string>("Never")
   const [notifications, setNotifications] = useState(true)
+  const [contextConsent, setContextConsent] = useState(false)
   const isOffline = useOffline()
   const { isInstalled, isInstallable, installApp } = usePWA()
 
@@ -28,6 +29,7 @@ export default function SettingsPage() {
     try {
       const userData = await getUserData()
       setNotifications(userData.preferences.notifications)
+      setContextConsent(userData.preferences.contextConsent || false)
 
       // Calculate approximate data size
       const dataString = JSON.stringify(userData)
@@ -36,6 +38,17 @@ export default function SettingsPage() {
       setDataSize(`${sizeInKB} KB`)
     } catch (error) {
       console.error("Failed to load settings:", error)
+    }
+  }
+
+  const handleContextConsentChange = async (enabled: boolean) => {
+    setContextConsent(enabled)
+    try {
+      const { updateContextConsent } = await import("@/lib/storage")
+      await updateContextConsent(enabled)
+    } catch (error) {
+      console.error("Failed to update consent preference:", error)
+      setContextConsent(!enabled)
     }
   }
 
@@ -180,6 +193,15 @@ export default function SettingsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="text-sm font-medium">Chat Context Sharing</div>
+                        <div className="text-xs text-muted-foreground">
+                          Allow Aaranya to remember conversations and emotional check-ins for personalized guidance
+                        </div>
+                      </div>
+                      <Switch checked={contextConsent} onCheckedChange={handleContextConsentChange} />
+                    </div>
                     <div className="flex items-center justify-between">
                       <div>
                         <div className="text-sm font-medium">Notifications</div>

@@ -72,8 +72,8 @@ export default function ChatPage() {
 
   return (
     <div className="vedic-aurora min-h-screen bg-gradient-to-br from-background via-card to-background">
-      <div className="relative z-10 container mx-auto px-4 py-10 max-w-4xl space-y-10">
-        <div className="flex items-center gap-4">
+      <div className="relative z-10 container mx-auto px-4 py-4 sm:py-10 max-w-4xl space-y-4 sm:space-y-10">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <Link href="/">
             <Button variant="ghost" size="sm">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -81,8 +81,8 @@ export default function ChatPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="font-serif font-bold text-2xl tracking-tight">Aaranya</h1>
-            <p className="text-muted-foreground">Your Compassionate AI Companion</p>
+            <h1 className="font-serif font-bold text-xl sm:text-2xl tracking-tight">Aaranya</h1>
+            <p className="text-sm text-muted-foreground">Your Compassionate AI Companion</p>
           </div>
         </div>
 
@@ -90,7 +90,7 @@ export default function ChatPage() {
           <ChatInterface initialMessage={INITIAL_MESSAGE} context={chatContext} suggestedPrompts={SUGGESTED_PROMPTS} />
         </div>
 
-        <p className="text-xs text-muted-foreground text-center">
+        <p className="text-xs text-muted-foreground text-center px-4">
           Aaranya offers reflective guidance grounded in Vedic-inspired wellbeing. For urgent mental health support, please
           reach out to a licensed professional.
         </p>

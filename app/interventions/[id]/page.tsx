@@ -1,264 +1,271 @@
 "use client"
 
-import { useState, useEffect, useRef } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
+import {
+  ArrowLeft,
+  Play,
+  Pause,
+  RotateCcw,
+  CheckCircle,
+  Sparkles,
+  Heart,
+  Eye,
+  Wind,
+  Sun,
+  Brain,
+  Music2,
+  MoveRight,
+} from "lucide-react"
+
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, Play, Pause, RotateCcw, CheckCircle } from "lucide-react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
+import { useToast } from "@/hooks/use-toast"
+import {
+  getInterventionDefinition,
+  getInterventionPalette,
+  formatDurationLabel,
+  type InterventionDefinition,
+  type InterventionStep,
+} from "@/lib/interventions"
+import { saveInterventionSession } from "@/lib/storage"
 
-interface InterventionStep {
-  id: string
-  instruction: string
-  duration: number
-  type: "instruction" | "practice" | "reflection"
+const formatTime = (seconds: number) => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${mins}:${secs.toString().padStart(2, "0")}`
 }
 
-const interventionData: Record<
-  string,
-  {
-    title: string
-    description: string
-    guna: string
-    totalDuration: number
-    steps: InterventionStep[]
+const visualBackgrounds: Record<InterventionDefinition["visual"], string> = {
+  breath: "radial-gradient(circle at 30% 30%, rgba(161, 98, 7, 0.22), transparent 60%), radial-gradient(circle at 70% 65%, rgba(99, 102, 241, 0.28), transparent 70%)",
+  gratitude:
+    "radial-gradient(circle at 20% 20%, rgba(244, 114, 182, 0.25), transparent 65%), radial-gradient(circle at 75% 55%, rgba(250, 204, 21, 0.3), transparent 70%)",
+  awareness:
+    "radial-gradient(circle at 30% 25%, rgba(99, 102, 241, 0.28), transparent 65%), radial-gradient(circle at 70% 70%, rgba(244, 114, 182, 0.15), transparent 70%)",
+  vision:
+    "radial-gradient(circle at 25% 25%, rgba(14, 165, 233, 0.24), transparent 65%), radial-gradient(circle at 70% 60%, rgba(161, 98, 7, 0.28), transparent 70%)",
+  "alternate-nostril":
+    "radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.24), transparent 60%), radial-gradient(circle at 80% 60%, rgba(99, 102, 241, 0.22), transparent 70%)",
+  mantra:
+    "radial-gradient(circle at 28% 28%, rgba(161, 98, 7, 0.24), transparent 60%), radial-gradient(circle at 68% 70%, rgba(236, 72, 153, 0.2), transparent 70%)",
+  energize:
+    "radial-gradient(circle at 20% 20%, rgba(250, 204, 21, 0.32), transparent 60%), radial-gradient(circle at 80% 70%, rgba(161, 98, 7, 0.28), transparent 70%)",
+  "body-scan":
+    "radial-gradient(circle at 25% 30%, rgba(56, 189, 248, 0.2), transparent 60%), radial-gradient(circle at 75% 65%, rgba(161, 98, 7, 0.24), transparent 70%)",
+  movement:
+    "radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.22), transparent 60%), radial-gradient(circle at 78% 65%, rgba(34, 197, 94, 0.22), transparent 70%)",
+}
+
+const iconForVisual = (visual: InterventionDefinition["visual"]) => {
+  switch (visual) {
+    case "gratitude":
+      return <Heart className="h-12 w-12 text-secondary" />
+    case "awareness":
+      return <Sparkles className="h-12 w-12 text-secondary" />
+    case "vision":
+      return <Eye className="h-12 w-12 text-primary" />
+    case "alternate-nostril":
+      return <Wind className="h-12 w-12 text-primary" />
+    case "mantra":
+      return <Music2 className="h-12 w-12 text-primary" />
+    case "energize":
+      return <Sun className="h-12 w-12 text-primary" />
+    case "body-scan":
+      return <Brain className="h-12 w-12 text-secondary" />
+    case "movement":
+      return <MoveRight className="h-12 w-12 text-primary" />
+    case "breath":
+    default:
+      return <Wind className="h-12 w-12 text-primary" />
   }
-> = {
-  "calming-breath": {
-    title: "4-7-8 Calming Breath",
-    description: "Activate your relaxation response with this powerful breathing pattern",
-    guna: "rajas",
-    totalDuration: 180, // 3 minutes in seconds
-    steps: [
-      {
-        id: "intro",
-        instruction:
-          "Find a comfortable seated position. Place one hand on your chest and one on your belly. We'll practice the 4-7-8 breathing technique to calm your nervous system.",
-        duration: 15,
-        type: "instruction",
-      },
-      {
-        id: "demo",
-        instruction:
-          "Let's start with a demonstration. Breathe in through your nose for 4 counts, hold for 7 counts, then exhale through your mouth for 8 counts.",
-        duration: 20,
-        type: "instruction",
-      },
-      {
-        id: "practice1",
-        instruction:
-          "Inhale through your nose... 1, 2, 3, 4. Now hold your breath... 1, 2, 3, 4, 5, 6, 7. Exhale slowly through your mouth... 1, 2, 3, 4, 5, 6, 7, 8.",
-        duration: 25,
-        type: "practice",
-      },
-      {
-        id: "practice2",
-        instruction:
-          "Continue this rhythm. Inhale for 4... Hold for 7... Exhale for 8. Feel your body beginning to relax with each cycle.",
-        duration: 60,
-        type: "practice",
-      },
-      {
-        id: "practice3",
-        instruction:
-          "Keep going at your own pace. Notice how your heart rate begins to slow and your mind becomes calmer.",
-        duration: 45,
-        type: "practice",
-      },
-      {
-        id: "reflection",
-        instruction:
-          "Take a moment to notice how you feel now compared to when you started. Return to natural breathing and rest in this calm state.",
-        duration: 15,
-        type: "reflection",
-      },
-    ],
-  },
-  "gratitude-reflection": {
-    title: "Gratitude Reflection",
-    description: "Cultivate appreciation and positive awareness through guided gratitude practice",
-    guna: "sattva",
-    totalDuration: 300, // 5 minutes
-    steps: [
-      {
-        id: "intro",
-        instruction:
-          "Settle into a comfortable position and take three deep breaths. We'll explore gratitude as a pathway to inner peace and clarity.",
-        duration: 20,
-        type: "instruction",
-      },
-      {
-        id: "body-gratitude",
-        instruction:
-          "Begin by appreciating your body. Thank your heart for beating, your lungs for breathing, your eyes for seeing. Feel genuine appreciation for this vessel that carries you through life.",
-        duration: 60,
-        type: "practice",
-      },
-      {
-        id: "relationships",
-        instruction:
-          "Now bring to mind someone you're grateful for. It could be family, a friend, or even a stranger who showed kindness. Feel the warmth of appreciation in your heart.",
-        duration: 60,
-        type: "practice",
-      },
-      {
-        id: "experiences",
-        instruction:
-          "Think of three experiences from today or this week that brought you joy, learning, or growth. Even small moments count - a warm cup of tea, a beautiful sunset, a moment of laughter.",
-        duration: 90,
-        type: "practice",
-      },
-      {
-        id: "challenges",
-        instruction:
-          "Consider a recent challenge. Can you find something to appreciate about it - perhaps the strength it revealed in you, or the lesson it offered?",
-        duration: 45,
-        type: "practice",
-      },
-      {
-        id: "closing",
-        instruction:
-          "Rest in this feeling of gratitude. Let it fill your entire being. When you're ready, gently open your eyes, carrying this appreciation with you.",
-        duration: 25,
-        type: "reflection",
-      },
-    ],
-  },
-  "energizing-breath": {
-    title: "Energizing Breath Work",
-    description: "Awaken your vital energy with invigorating breathing techniques",
-    guna: "tamas",
-    totalDuration: 240, // 4 minutes
-    steps: [
-      {
-        id: "intro",
-        instruction:
-          "Sit up tall with your spine straight. We'll use breath to awaken your natural vitality and clear mental fog.",
-        duration: 15,
-        type: "instruction",
-      },
-      {
-        id: "bellows-prep",
-        instruction:
-          "We'll practice Bellows Breath (Bhastrika). Place your hands on your knees. This involves rapid, forceful breathing to energize your system.",
-        duration: 20,
-        type: "instruction",
-      },
-      {
-        id: "bellows-practice",
-        instruction:
-          "Take 10 rapid, forceful breaths in and out through your nose. Pump your belly like a bellows. Then take a deep breath in, hold for 5 seconds, and exhale slowly.",
-        duration: 45,
-        type: "practice",
-      },
-      {
-        id: "bellows-repeat",
-        instruction:
-          "Let's do another round. 10 more rapid breaths, pumping energy through your system. Then hold and release slowly.",
-        duration: 45,
-        type: "practice",
-      },
-      {
-        id: "sun-breath",
-        instruction:
-          "Now we'll do Sun Breath. Inhale and sweep your arms up overhead, exhale and bring them down. Feel yourself gathering energy from above.",
-        duration: 60,
-        type: "practice",
-      },
-      {
-        id: "integration",
-        instruction:
-          "Return to normal breathing. Notice the energy flowing through your body. Feel more alert, awake, and ready to engage with your day.",
-        duration: 55,
-        type: "reflection",
-      },
-    ],
-  },
+}
+
+const stepBadgeVariant = (type: InterventionStep["type"]): "default" | "outline" | "secondary" => {
+  switch (type) {
+    case "instruction":
+      return "secondary"
+    case "reflection":
+      return "outline"
+    case "practice":
+    default:
+      return "default"
+  }
+}
+
+const VisualDisplay = ({
+  intervention,
+  isPlaying,
+  currentStep,
+}: {
+  intervention: InterventionDefinition
+  isPlaying: boolean
+  currentStep?: InterventionStep
+}) => {
+  if (!intervention) return null
+
+  if (intervention.visual === "breath") {
+    const isActive = isPlaying && currentStep?.type === "practice"
+    return (
+      <div
+        className={`relative mx-auto mb-6 flex h-36 w-36 items-center justify-center overflow-hidden rounded-full border border-primary/30 bg-gradient-to-br from-card/80 via-background/80 to-card/80 shadow-[0_25px_80px_-60px_rgba(15,23,42,0.55)] ${
+          isPlaying ? "animate-soft-float" : ""
+        }`}
+      >
+        <div
+          className={`absolute inset-3 rounded-full border border-primary/30 bg-primary/10 transition-opacity duration-700 ${
+            isActive ? "opacity-100 animate-slow-pulse" : "opacity-70"
+          }`}
+        />
+        <div
+          className={`relative flex h-20 w-20 items-center justify-center rounded-full bg-background/80 shadow-inner transition-transform duration-700 ${
+            isActive ? "scale-110" : "scale-95"
+          }`}
+        >
+          {iconForVisual("breath")}
+        </div>
+      </div>
+    )
+  }
+
+  const background = visualBackgrounds[intervention.visual]
+  return (
+    <div
+      className={`relative mx-auto mb-6 flex h-36 w-36 items-center justify-center overflow-hidden rounded-3xl border border-border/60 shadow-[0_30px_90px_-70px_rgba(15,23,42,0.6)] ${
+        isPlaying ? "animate-soft-float" : ""
+      }`}
+      style={background ? { backgroundImage: background } : undefined}
+    >
+      <div className="absolute inset-0 bg-gradient-to-br from-card/75 via-background/65 to-card/80 backdrop-blur-sm" />
+      <div
+        className={`absolute -inset-6 opacity-40 ${isPlaying ? "animate-rotate-glow" : ""}`}
+        style={background ? { backgroundImage: background } : undefined}
+      />
+      <div className="relative flex h-20 w-20 items-center justify-center rounded-full bg-background/85 shadow-inner">
+        {iconForVisual(intervention.visual)}
+      </div>
+    </div>
+  )
 }
 
 export default function InterventionDetailPage() {
   const params = useParams()
   const interventionId = params.id as string
-  const intervention = interventionData[interventionId]
+  const intervention = useMemo(() => getInterventionDefinition(interventionId), [interventionId])
 
   const [currentStepIndex, setCurrentStepIndex] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [timeRemaining, setTimeRemaining] = useState(0)
   const [isComplete, setIsComplete] = useState(false)
+  const [sessionLogged, setSessionLogged] = useState(false)
   const intervalRef = useRef<NodeJS.Timeout | null>(null)
+  const { toast } = useToast()
 
   useEffect(() => {
-    if (intervention) {
-      setTimeRemaining(intervention.steps[0].duration)
-    }
+    if (!intervention) return
+    setCurrentStepIndex(0)
+    setTimeRemaining(intervention.steps[0]?.duration ?? 0)
+    setIsComplete(false)
+    setSessionLogged(false)
+    setIsPlaying(false)
   }, [intervention])
 
   useEffect(() => {
+    if (!intervention) return
+
     if (isPlaying && timeRemaining > 0) {
       intervalRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
-            // Move to next step
             if (currentStepIndex < intervention.steps.length - 1) {
-              const nextStep = currentStepIndex + 1
-              setCurrentStepIndex(nextStep)
-              return intervention.steps[nextStep].duration
-            } else {
-              // Complete the intervention
-              setIsComplete(true)
-              setIsPlaying(false)
-              return 0
+              const nextStepIndex = currentStepIndex + 1
+              setCurrentStepIndex(nextStepIndex)
+              return intervention.steps[nextStepIndex].duration
             }
+
+            setIsComplete(true)
+            setIsPlaying(false)
+            return 0
           }
+
           return prev - 1
         })
       }, 1000)
-    } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current)
-      }
+    } else if (intervalRef.current) {
+      clearInterval(intervalRef.current)
+      intervalRef.current = null
     }
 
     return () => {
       if (intervalRef.current) {
         clearInterval(intervalRef.current)
+        intervalRef.current = null
       }
     }
   }, [isPlaying, timeRemaining, currentStepIndex, intervention])
 
+  useEffect(() => {
+    if (!intervention || !isComplete || sessionLogged) {
+      return
+    }
+
+    const persistSession = async () => {
+      try {
+        await saveInterventionSession({
+          interventionId: intervention.id,
+          completedAt: Date.now(),
+          duration: intervention.totalDuration,
+        })
+        setSessionLogged(true)
+        toast({
+          title: "Practice saved",
+          description: "We'll fold this session into your insights and recommendations.",
+          duration: 4000,
+        })
+      } catch (error) {
+        console.error("Failed to log intervention session", error)
+        toast({
+          title: "Unable to save",
+          description: "We couldn't log this session. You can retry by refreshing.",
+          variant: "destructive",
+        })
+      }
+    }
+
+    void persistSession()
+  }, [intervention, isComplete, sessionLogged, toast])
+
   const handlePlayPause = () => {
-    setIsPlaying(!isPlaying)
+    setIsPlaying((previous) => !previous)
   }
 
   const handleReset = () => {
+    if (!intervention) return
     setIsPlaying(false)
     setCurrentStepIndex(0)
-    setTimeRemaining(intervention.steps[0].duration)
+    setTimeRemaining(intervention.steps[0]?.duration ?? 0)
     setIsComplete(false)
+    setSessionLogged(false)
   }
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60)
-    const secs = seconds % 60
-    return `${mins}:${secs.toString().padStart(2, "0")}`
-  }
+  const currentStep = intervention?.steps[currentStepIndex]
+  const nextStep = intervention?.steps[currentStepIndex + 1]
 
-  const totalProgress = intervention
-    ? (currentStepIndex * 100 +
-        ((intervention.steps[currentStepIndex].duration - timeRemaining) /
-          intervention.steps[currentStepIndex].duration) *
-          100) /
-      intervention.steps.length
-    : 0
+  const totalProgress = useMemo(() => {
+    if (!intervention || !currentStep) return 0
+    const stepDuration = Math.max(currentStep.duration, 1)
+    const stepProgress = Math.min(1, (stepDuration - timeRemaining) / stepDuration)
+    return ((currentStepIndex + stepProgress) / intervention.steps.length) * 100
+  }, [intervention, currentStep, currentStepIndex, timeRemaining])
 
   if (!intervention) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto text-center">
-            <h1 className="font-serif font-bold text-2xl mb-4">Intervention Not Found</h1>
+          <div className="mx-auto max-w-2xl text-center">
+            <h1 className="mb-4 font-serif text-2xl font-bold">Intervention Not Found</h1>
             <Link href="/interventions">
               <Button>Back to Interventions</Button>
             </Link>
@@ -268,24 +275,35 @@ export default function InterventionDetailPage() {
     )
   }
 
+  const palette = getInterventionPalette(intervention.guna)
+
   if (isComplete) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
         <div className="container mx-auto px-4 py-8">
-          <div className="max-w-2xl mx-auto">
+          <div className="mx-auto max-w-2xl">
             <Card className="text-center">
               <CardHeader>
-                <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
-                  <CheckCircle className="w-8 h-8 text-green-600" />
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
+                  <CheckCircle className="h-8 w-8 text-green-600" />
                 </div>
                 <CardTitle className="font-serif text-2xl">Practice Complete!</CardTitle>
-                <CardDescription>You've completed the {intervention.title} intervention</CardDescription>
+                <CardDescription>
+                  You've completed the {intervention.title} practice ({formatDurationLabel(intervention.totalDuration)})
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <p className="text-muted-foreground">
-                  Take a moment to notice how you feel now. Your dedication to self-care is commendable.
+                  Take a moment to notice how you feel. We'll use this session to refine your insights and future guidance.
                 </p>
-                <div className="flex gap-3 justify-center">
+                {sessionLogged ? (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    Logged to insights
+                  </Badge>
+                ) : (
+                  <p className="text-xs text-muted-foreground">Saving locally…</p>
+                )}
+                <div className="flex flex-wrap justify-center gap-3">
                   <Button onClick={handleReset} variant="outline">
                     Practice Again
                   </Button>
@@ -294,6 +312,9 @@ export default function InterventionDetailPage() {
                   </Link>
                   <Link href="/chat">
                     <Button variant="secondary">Chat with Aaranya</Button>
+                  </Link>
+                  <Link href="/insights">
+                    <Button variant="ghost">View Insights</Button>
                   </Link>
                 </div>
               </CardContent>
@@ -304,100 +325,94 @@ export default function InterventionDetailPage() {
     )
   }
 
-  const currentStep = intervention.steps[currentStepIndex]
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
-      <div className="container mx-auto px-4 py-8">
-        <div className="max-w-2xl mx-auto">
-          {/* Header */}
-          <div className="flex items-center gap-4 mb-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
+        <div className="mx-auto max-w-2xl">
+          <div className="mb-6 flex flex-col items-start gap-3 sm:mb-8 sm:flex-row sm:items-center sm:gap-4">
             <Link href="/interventions">
               <Button variant="ghost" size="sm">
-                <ArrowLeft className="w-4 h-4 mr-2" />
+                <ArrowLeft className="mr-2 h-4 w-4" />
                 Back
               </Button>
             </Link>
-            <div>
-              <h1 className="font-serif font-bold text-2xl">{intervention.title}</h1>
-              <p className="text-muted-foreground">{intervention.description}</p>
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <h1 className="font-serif text-xl font-bold sm:text-2xl">{intervention.title}</h1>
+                <Badge variant="outline" className={`${palette.surface} ${palette.text} capitalize`}
+                >
+                  {intervention.guna}
+                </Badge>
+              </div>
+              <p className="max-w-xl text-sm text-muted-foreground">{intervention.description}</p>
+              <div className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+                <span>{formatDurationLabel(intervention.totalDuration)}</span>
+                <span>• {intervention.type}</span>
+                <span>• {intervention.difficulty}</span>
+              </div>
             </div>
           </div>
 
-          {/* Progress */}
-          <Card className="mb-6">
+          <Card className="mb-4 sm:mb-6">
             <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
+              <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium">Progress</span>
                 <Badge variant="secondary">
                   Step {currentStepIndex + 1} of {intervention.steps.length}
                 </Badge>
               </div>
-              <Progress value={totalProgress} className="h-2 mb-4" />
-              <div className="flex items-center justify-between text-sm text-muted-foreground">
+              <Progress value={totalProgress} className="mb-4 h-2" />
+              <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-muted-foreground">
                 <span>Time remaining: {formatTime(timeRemaining)}</span>
                 <span>{Math.round(totalProgress)}% complete</span>
               </div>
             </CardContent>
           </Card>
 
-          {/* Current Step */}
           <Card className="mb-6">
-            <CardHeader>
+            <CardHeader className="pb-2">
               <div className="flex items-center gap-2">
-                <Badge
-                  variant={
-                    currentStep.type === "instruction"
-                      ? "secondary"
-                      : currentStep.type === "practice"
-                        ? "default"
-                        : "outline"
-                  }
-                >
-                  {currentStep.type}
+                <Badge variant={stepBadgeVariant(currentStep?.type ?? "instruction")} className="capitalize">
+                  {currentStep?.type ?? "instruction"}
                 </Badge>
               </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-lg leading-relaxed mb-6">{currentStep.instruction}</p>
-
-              {/* Visual breathing guide for breathing exercises */}
-              {intervention.guna === "rajas" && currentStep.type === "practice" && (
-                <div className="flex justify-center mb-6">
-                  <div
-                    className={`w-24 h-24 rounded-full border-4 border-primary/30 flex items-center justify-center transition-all duration-1000 ${
-                      isPlaying ? "scale-110 border-primary" : "scale-100"
-                    }`}
-                  >
-                    <div
-                      className={`w-16 h-16 rounded-full bg-primary/20 transition-all duration-2000 ${
-                        isPlaying ? "scale-75" : "scale-100"
-                      }`}
-                    ></div>
+            <CardContent className="space-y-5">
+              <VisualDisplay intervention={intervention} isPlaying={isPlaying} currentStep={currentStep} />
+              <p className="text-lg leading-relaxed">{currentStep?.instruction}</p>
+              {nextStep && (
+                <div className="rounded-xl border border-dashed border-border/60 bg-card/60 p-4 text-sm">
+                  <div className="mb-1 text-xs font-medium uppercase text-muted-foreground">Next</div>
+                  <div className="text-sm font-medium capitalize">
+                    {nextStep.type} • {formatDurationLabel(nextStep.duration)}
                   </div>
+                  <p className="text-xs text-muted-foreground">
+                    {nextStep.instruction.length > 160
+                      ? `${nextStep.instruction.slice(0, 157)}...`
+                      : nextStep.instruction}
+                  </p>
                 </div>
               )}
             </CardContent>
           </Card>
 
-          {/* Controls */}
-          <div className="flex justify-center gap-4">
-            <Button onClick={handlePlayPause} size="lg" className="px-8">
+          <div className="flex flex-col justify-center gap-3 sm:flex-row sm:gap-4">
+            <Button onClick={handlePlayPause} size="lg" className="w-full px-6 sm:w-auto sm:px-8">
               {isPlaying ? (
                 <>
-                  <Pause className="w-5 h-5 mr-2" />
-                  Pause
+                  <Pause className="mr-2 h-5 w-5" /> Pause
                 </>
               ) : (
                 <>
-                  <Play className="w-5 h-5 mr-2" />
-                  {currentStepIndex === 0 && timeRemaining === intervention.steps[0].duration ? "Start" : "Resume"}
+                  <Play className="mr-2 h-5 w-5" />
+                  {currentStepIndex === 0 && timeRemaining === (intervention.steps[0]?.duration ?? 0)
+                    ? "Start"
+                    : "Resume"}
                 </>
               )}
             </Button>
-            <Button onClick={handleReset} variant="outline" size="lg">
-              <RotateCcw className="w-5 h-5 mr-2" />
-              Reset
+            <Button onClick={handleReset} variant="outline" size="lg" className="w-full sm:w-auto">
+              <RotateCcw className="mr-2 h-5 w-5" /> Reset
             </Button>
           </div>
         </div>

@@ -194,9 +194,9 @@ export default function EmotionalMappingPage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-card to-background">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-4 sm:py-8">
         <div className="mx-auto max-w-2xl">
-          <div className="mb-8 flex items-center gap-4">
+          <div className="mb-6 sm:mb-8 flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
             <Link href="/">
               <Button variant="ghost" size="sm" disabled={isSubmitting}>
                 <ArrowLeft className="mr-2 h-4 w-4" />
@@ -204,12 +204,12 @@ export default function EmotionalMappingPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="font-serif text-2xl font-bold">Daily Emotional Check-in</h1>
-              <p className="text-muted-foreground">Tune in, reflect, and save your inner landscape</p>
+              <h1 className="font-serif text-xl sm:text-2xl font-bold">Daily Emotional Check-in</h1>
+              <p className="text-sm text-muted-foreground">Tune in, reflect, and save your inner landscape</p>
             </div>
           </div>
 
-          <div className="mb-8">
+          <div className="mb-6 sm:mb-8">
             <div className="mb-2 flex items-center justify-between">
               <span className="text-sm font-medium">Progress</span>
               <span className="text-sm text-muted-foreground">
@@ -221,14 +221,19 @@ export default function EmotionalMappingPage() {
 
           {isLastStep ? renderReflectionCard() : renderSliderCard()}
 
-          <div className="flex justify-between">
-            <Button variant="outline" onClick={handlePrevious} disabled={currentStep === 0 || isSubmitting}>
+          <div className="flex flex-col sm:flex-row justify-between gap-3">
+            <Button 
+              variant="outline" 
+              onClick={handlePrevious} 
+              disabled={currentStep === 0 || isSubmitting}
+              className="w-full sm:w-auto"
+            >
               <ArrowLeft className="mr-2 h-4 w-4" />
               Previous
             </Button>
 
             {isLastStep ? (
-              <Button onClick={handleSubmit} disabled={isSubmitting}>
+              <Button onClick={handleSubmit} disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="h-4 w-4 animate-spin" />
@@ -242,7 +247,7 @@ export default function EmotionalMappingPage() {
                 )}
               </Button>
             ) : (
-              <Button onClick={handleNext} disabled={isSubmitting}>
+              <Button onClick={handleNext} disabled={isSubmitting} className="w-full sm:w-auto">
                 Next
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

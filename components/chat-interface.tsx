@@ -408,7 +408,7 @@ export function ChatInterface({ initialMessage, context, suggestedPrompts }: Cha
   const showConsentGate = !isLoadingHistory && !hasContextConsent && !allowTransient
 
   return (
-    <Card className="group flex flex-col h-[600px] rounded-3xl border border-border/60 bg-card/95 shadow-[0_40px_120px_-80px_rgba(15,23,42,0.55)] transition-shadow duration-500 backdrop-blur-md hover:shadow-[0_52px_200px_-110px_rgba(161,98,7,0.55)]">
+    <Card className="group flex flex-col h-[500px] sm:h-[600px] md:h-[650px] lg:h-[700px] max-h-[calc(100vh-8rem)] rounded-3xl border border-border/60 bg-card/95 shadow-[0_40px_120px_-80px_rgba(15,23,42,0.55)] transition-shadow duration-500 backdrop-blur-md hover:shadow-[0_52px_200px_-110px_rgba(161,98,7,0.55)]">
       {showConsentGate ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-5 p-8 text-center">
           <div>

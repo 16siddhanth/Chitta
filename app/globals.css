@@ -155,6 +155,42 @@
   }
 }
 
+@keyframes softFloat {
+  0% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+  50% {
+    transform: translate3d(0, -6px, 0) scale(1.02);
+  }
+  100% {
+    transform: translate3d(0, 0, 0) scale(0.98);
+  }
+}
+
+@keyframes slowPulse {
+  0% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 0.85;
+  }
+  100% {
+    transform: scale(0.92);
+    opacity: 0.5;
+  }
+}
+
+@keyframes rotateGlow {
+  0% {
+    transform: rotate(0deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(360deg) scale(1.05);
+  }
+}
+
 @layer utilities {
   .vedic-aurora {
     position: relative;
@@ -182,5 +218,17 @@
 
   .fade-in-up {
     animation: fadeInUp 0.45s ease-out both;
+  }
+
+  .animate-soft-float {
+    animation: softFloat 7s ease-in-out infinite;
+  }
+
+  .animate-slow-pulse {
+    animation: slowPulse 5s ease-in-out infinite;
+  }
+
+  .animate-rotate-glow {
+    animation: rotateGlow 12s linear infinite;
   }
 }

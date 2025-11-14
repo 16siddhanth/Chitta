@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 import {
@@ -12,34 +12,18 @@ import {
   Heart,
   Brain,
   Sparkles,
-  Send,
-  Loader2,
   Droplet,
 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
 import { useEmotionalData } from "@/hooks/use-emotional-data"
 
 type GunaState = {
   sattva: number
   rajas: number
   tamas: number
-}
-
-type Message = {
-  id: string
-  role: "user" | "assistant"
-  content: string
-  timestamp: string
 }
 
 type GunaNode = {
@@ -152,14 +136,6 @@ const suggestedPrompts = [
   "I need guidance for better rest",
 ]
 
-const initialAssistantMessage = (): Message => ({
-  id: "assistant-initial",
-  role: "assistant",
-  content:
-    "Hello, I'm Aaranya—your mindful companion. Share what's on your mind and I'll offer gentle guidance inspired by the balance of the three gunas.",
-  timestamp: new Date().toISOString(),
-})
-
 const calculateNodePosition = (index: number, total: number, rotationAngle: number) => {
   const angle = ((index / total) * 360 + rotationAngle) % 360
   const radius = 120
@@ -170,28 +146,6 @@ const calculateNodePosition = (index: number, total: number, rotationAngle: numb
   const opacity = Math.max(0.55, Math.min(1, 0.55 + 0.45 * ((1 + Math.sin(radian)) / 2)))
 
   return { x, y, zIndex, opacity }
-}
-
-const generateCompanionResponse = (userInput: string): string => {
-  const input = userInput.toLowerCase()
-
-  if (input.includes("stress") || input.includes("anxious") || input.includes("overwhelmed")) {
-    return "I hear the weight you're carrying. When Rajas energy rises, our minds move quickly. Let's pause and breathe slowly together—inhale for four, exhale for six. Would you like a calming breath exercise or a grounding visualization?"
-  }
-
-  if (input.includes("tired") || input.includes("exhausted") || input.includes("stuck")) {
-    return "That heavy stillness can feel endless. A brief walk outside or a gentle stretch can invite balanced Sattva energy back in. I can guide you through a two-minute energizing practice whenever you're ready."
-  }
-
-  if (input.includes("peaceful") || input.includes("grateful") || input.includes("calm")) {
-    return "Beautiful—you are resting in Sattva. Take a moment to notice how that ease feels in your body. Shall we capture this in your journal or explore how to nurture more of it throughout the day?"
-  }
-
-  if (input.includes("help") || input.includes("support") || input.includes("guidance")) {
-    return "I'm here with you. Share the area of life that needs care, and we'll explore small, compassionate steps together."
-  }
-
-  return "Thank you for trusting me with this moment. Every feeling brings useful information. Let me know whether you want reflection prompts, a short practice, or simply a listening ear."
 }
 
 export default function ChittaHome() {
@@ -238,12 +192,6 @@ export default function ChittaHome() {
   const [selectedGuna, setSelectedGuna] = useState<string | null>(null)
   const [rotationAngle, setRotationAngle] = useState(0)
   const [autoRotate, setAutoRotate] = useState(true)
-  const [messages, setMessages] = useState<Message[]>(() => [initialAssistantMessage()])
-  const [inputValue, setInputValue] = useState("")
-  const [isTyping, setIsTyping] = useState(false)
-  const [isFocused, setIsFocused] = useState(false)
-  const [isChatOpen, setIsChatOpen] = useState(false)
-  const messagesEndRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     let rotationTimer: ReturnType<typeof setInterval>
@@ -260,45 +208,6 @@ export default function ChittaHome() {
       }
     }
   }, [autoRotate])
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
-  }, [messages])
-
-  const handleSendMessage = (content?: string) => {
-    const value = (content ?? inputValue).trim()
-
-    if (!value) {
-      return
-    }
-
-    const userMessage: Message = {
-      id: `user-${Date.now()}`,
-      role: "user",
-      content: value,
-      timestamp: new Date().toISOString(),
-    }
-
-    setMessages((prev) => [...prev, userMessage])
-    setInputValue("")
-    setIsTyping(true)
-
-    window.setTimeout(() => {
-      const assistantMessage: Message = {
-        id: `assistant-${Date.now()}`,
-        role: "assistant",
-        content: generateCompanionResponse(value),
-        timestamp: new Date().toISOString(),
-      }
-
-      setMessages((prev) => [...prev, assistantMessage])
-      setIsTyping(false)
-    }, 1400)
-  }
-
-  const handleSuggestedPrompt = (prompt: string) => {
-    handleSendMessage(prompt)
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-amber-50 via-white to-orange-100 text-slate-900">
@@ -326,12 +235,11 @@ export default function ChittaHome() {
                   Settings
                 </Button>
               </Link>
-              <Button
-                className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:from-orange-600 hover:to-amber-600"
-                onClick={() => setIsChatOpen(true)}
-              >
-                <Sparkles className="mr-2 h-4 w-4" /> Meet Aaranya
-              </Button>
+              <Link href="/chat">
+                <Button className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:from-orange-600 hover:to-amber-600">
+                  <Sparkles className="mr-2 h-4 w-4" /> Meet Aaranya
+                </Button>
+              </Link>
             </div>
           </div>
           <div className="mt-8 max-w-3xl">
@@ -346,18 +254,18 @@ export default function ChittaHome() {
         </div>
       </header>
 
-      <main className="container mx-auto px-4 py-12">
-        <div className="grid gap-6 xl:grid-cols-[360px_1fr]">
-          <div className="space-y-6">
+      <main className="container mx-auto px-4 py-6 sm:py-12">
+        <div className="grid gap-4 sm:gap-6 xl:grid-cols-[minmax(300px,360px)_1fr]">
+          <div className="space-y-4 sm:space-y-6">
             <Card className="bg-white/80 backdrop-blur-md shadow-lg">
               <CardHeader className="border-b border-orange-100/80 bg-gradient-to-r from-white to-amber-50">
-                <CardTitle className="flex items-center text-lg text-slate-900">
-                  <Droplet className="mr-2 h-5 w-5 text-orange-500" />
+                <CardTitle className="flex items-center text-base sm:text-lg text-slate-900">
+                  <Droplet className="mr-2 h-4 sm:h-5 w-4 sm:w-5 text-orange-500" />
                   Tri-Guna Balance
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="relative flex h-80 items-center justify-center">
+              <CardContent className="p-4 sm:p-6">
+                <div className="relative flex h-64 sm:h-80 items-center justify-center">
                   <div className="absolute flex h-full w-full items-center justify-center">
                     <div className="absolute flex h-24 w-24 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 via-orange-400 to-amber-300 text-white shadow-xl">
                       <Flower2 className="h-10 w-10" />
@@ -437,23 +345,25 @@ export default function ChittaHome() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 p-4">
-                {suggestedInterventions.map((intervention) => {
+                {suggestedInterventions.map((intervention, index) => {
                   const Icon = intervention.icon
+                  const interventionId = latest?.recommendedInterventionIds[index] || `intervention-${index}`
                   return (
-                    <Button
-                      key={intervention.title}
-                      variant="outline"
-                      className="flex w-full items-center justify-start gap-3 rounded-xl border-orange-200/70 bg-white/60 p-4 text-left text-slate-800 shadow-sm transition-all hover:translate-y-[-2px] hover:border-orange-300 hover:bg-orange-50"
-                    >
-                      <Icon className="h-5 w-5 text-orange-500" />
-                      <span className="flex-1">
-                        <span className="block text-sm font-semibold">{intervention.title}</span>
-                        <span className="block text-xs text-slate-600">{intervention.subtitle}</span>
-                      </span>
-                      <Badge variant="secondary" className="whitespace-nowrap bg-orange-100 text-orange-700">
-                        {intervention.duration}
-                      </Badge>
-                    </Button>
+                    <Link key={intervention.title} href={`/interventions/${interventionId}`}>
+                      <Button
+                        variant="outline"
+                        className="flex w-full items-center justify-start gap-3 rounded-xl border-orange-200/70 bg-white/60 p-4 text-left text-slate-800 shadow-sm transition-all hover:translate-y-[-2px] hover:border-orange-300 hover:bg-orange-50"
+                      >
+                        <Icon className="h-5 w-5 text-orange-500" />
+                        <span className="flex-1">
+                          <span className="block text-sm font-semibold">{intervention.title}</span>
+                          <span className="block text-xs text-slate-600">{intervention.subtitle}</span>
+                        </span>
+                        <Badge variant="secondary" className="whitespace-nowrap bg-orange-100 text-orange-700">
+                          {intervention.duration}
+                        </Badge>
+                      </Button>
+                    </Link>
                   )
                 })}
               </CardContent>
@@ -528,23 +438,21 @@ export default function ChittaHome() {
               </CardContent>
             </Card>
 
-            {!isChatOpen && (
-              <Card className="bg-gradient-to-br from-orange-500/10 via-white to-amber-200/30 backdrop-blur-md shadow-lg">
-                <CardContent className="flex flex-col items-start gap-4 p-6">
-                  <p className="text-sm uppercase tracking-[0.3em] text-orange-500">AI Companion</p>
-                  <h3 className="font-serif text-2xl text-slate-900">Need a listening ear?</h3>
-                  <p className="text-sm text-slate-600">
-                    Aaranya listens, reflects, and offers practical micro-practices based on your current guna balance.
-                  </p>
-                  <Button
-                    className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:from-orange-600 hover:to-amber-600"
-                    onClick={() => setIsChatOpen(true)}
-                  >
+            {/* Removed local chat dialog - redirects to /chat */}
+            <Card className="bg-gradient-to-br from-orange-500/10 via-white to-amber-200/30 backdrop-blur-md shadow-lg">
+              <CardContent className="flex flex-col items-start gap-4 p-6">
+                <p className="text-sm uppercase tracking-[0.3em] text-orange-500">AI Companion</p>
+                <h3 className="font-serif text-2xl text-slate-900">Need a listening ear?</h3>
+                <p className="text-sm text-slate-600">
+                  Aaranya listens, reflects, and offers practical micro-practices based on your current guna balance.
+                </p>
+                <Link href="/chat">
+                  <Button className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:from-orange-600 hover:to-amber-600">
                     Start a Conversation
                   </Button>
-                </CardContent>
-              </Card>
-            )}
+                </Link>
+              </CardContent>
+            </Card>
           </div>
         </div>
       </main>
@@ -557,121 +465,6 @@ export default function ChittaHome() {
           </div>
         </div>
       </footer>
-
-      <Dialog open={isChatOpen} onOpenChange={setIsChatOpen}>
-        <DialogContent className="sm:max-w-3xl lg:max-w-4xl border-0 bg-transparent p-0 shadow-none" showCloseButton>
-          <div className="rounded-2xl border border-orange-100 bg-white/95 shadow-2xl">
-            <DialogHeader className="border-b border-orange-100/80 bg-gradient-to-r from-white to-amber-50 p-6">
-              <DialogTitle className="flex items-center text-lg text-slate-900">
-                <Sparkles className="mr-2 h-5 w-5 text-orange-500" />
-                Aaranya • Mindful Companion
-              </DialogTitle>
-              <DialogDescription className="text-sm text-slate-600">
-                Share what you feel. Aaranya responds with grounded guidance inspired by the balance of sattva, rajas,
-                and tamas.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="flex h-[640px] flex-col bg-gradient-to-b from-amber-50/40 via-white to-white p-6">
-              <div className="flex-1 overflow-y-auto rounded-2xl border border-orange-100/80 bg-white/80 p-6 shadow-inner">
-                {messages.length === 0 ? (
-                  <div className="flex h-full flex-col items-center justify-center text-center text-slate-600">
-                    <Flower2 className="mb-4 h-12 w-12 text-orange-400 animate-pulse-slow" />
-                    <p className="font-medium text-slate-700">Share a thought to begin.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {messages.map((message) => (
-                      <div
-                        key={message.id}
-                        className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
-                      >
-                        <div
-                          className={`max-w-[80%] rounded-2xl p-4 text-sm leading-relaxed shadow-sm ${
-                            message.role === "user"
-                              ? "rounded-tr-sm bg-gradient-to-br from-orange-500 to-amber-500 text-white"
-                              : "rounded-tl-sm border border-orange-100/80 bg-white/90 text-slate-800"
-                          }`}
-                        >
-                          <p>{message.content}</p>
-                          <span
-                            className={`mt-2 block text-xs opacity-70 ${
-                              message.role === "user" ? "text-white/80" : "text-slate-500"
-                            }`}
-                          >
-                            {new Date(message.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-
-                    {isTyping && (
-                      <div className="flex justify-start">
-                        <div className="rounded-2xl border border-orange-100/80 bg-white/90 p-4 text-slate-700">
-                          <div className="flex items-center gap-2">
-                            <span className="flex items-center gap-1">
-                              <span className="h-2 w-2 animate-bounce rounded-full bg-orange-400" />
-                              <span className="h-2 w-2 animate-bounce rounded-full bg-orange-500" style={{ animationDelay: "0.15s" }} />
-                              <span className="h-2 w-2 animate-bounce rounded-full bg-orange-600" style={{ animationDelay: "0.3s" }} />
-                            </span>
-                            <span className="text-xs text-slate-500">Aaranya is reflecting…</span>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                    <div ref={messagesEndRef} />
-                  </div>
-                )}
-              </div>
-
-              {messages.length <= 1 && (
-                <div className="mt-4">
-                  <p className="text-xs uppercase tracking-wide text-orange-500">Try asking about</p>
-                  <div className="mt-2 flex flex-wrap gap-2">
-                    {suggestedPrompts.map((prompt) => (
-                      <Button
-                        key={prompt}
-                        variant="outline"
-                        size="sm"
-                        className="rounded-full border-orange-200 text-xs text-slate-700 hover:bg-orange-100"
-                        onClick={() => handleSuggestedPrompt(prompt)}
-                      >
-                        {prompt}
-                      </Button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <form
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  handleSendMessage()
-                }}
-                className={`mt-4 flex items-center gap-3 rounded-full border px-4 py-2 shadow-sm transition ${
-                  isFocused ? "border-orange-300 bg-white" : "border-orange-200 bg-white/80"
-                }`}
-              >
-                <input
-                  value={inputValue}
-                  onChange={(event) => setInputValue(event.target.value)}
-                  onFocus={() => setIsFocused(true)}
-                  onBlur={() => setIsFocused(false)}
-                  placeholder="Share your thoughts…"
-                  className="flex-1 bg-transparent text-sm text-slate-800 placeholder:text-slate-400 focus:outline-none"
-                />
-                <Button
-                  type="submit"
-                  size="icon"
-                  disabled={!inputValue.trim() || isTyping}
-                  className="rounded-full bg-gradient-to-r from-orange-500 to-amber-500 text-white hover:from-orange-600 hover:to-amber-600"
-                >
-                  {isTyping ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </form>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
 
       <style jsx>{`
         @keyframes fade-in {
