@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { useEmotionalData } from "@/hooks/use-emotional-data"
+import { formatDurationLabel, getInterventionDefinition } from "@/lib/interventions"
 
 type GunaState = {
   sattva: number
@@ -34,45 +35,22 @@ type GunaNode = {
   description: string
 }
 
-type Intervention = {
+type InterventionSuggestion = {
+  slug: string
   icon: LucideIcon
   title: string
   subtitle: string
   duration: string
 }
 
-const gunaNodes: GunaNode[] = [
-  {
-    id: 1,
-    name: "Sattva",
-    icon: Sun,
-    color: "from-amber-200 to-amber-100",
-    description: "Calm clarity, balance, and empathy",
-  },
-  {
-    id: 2,
-    name: "Rajas",
-    icon: Flame,
-    color: "from-amber-400 to-orange-300",
-    description: "Motivation, passion, and purposeful action",
-  },
-  {
-    id: 3,
-    name: "Tamas",
-    icon: Moon,
-    color: "from-orange-600 to-rose-500",
-    description: "Rest, reflection, and steady grounding",
-  },
-]
+type InterventionPreset = {
+  icon: LucideIcon
+  title: string
+  subtitle: string
+  duration?: string
+}
 
-const defaultInterventions: Intervention[] = [
-  { icon: Flower2, title: "Guided Meditation", subtitle: "Return to steady breathing", duration: "5 min" },
-  { icon: Wind, title: "Cooling Breathwork", subtitle: "Soften tension with mindful breath", duration: "3 min" },
-  { icon: Heart, title: "Compassion Pause", subtitle: "Reconnect with gratitude", duration: "7 min" },
-  { icon: Brain, title: "Perspective Reset", subtitle: "Reframe with gentle inquiry", duration: "10 min" },
-]
-
-const interventionLookup: Record<string, Intervention> = {
+const interventionLookup: Record<string, InterventionPreset> = {
   "gratitude-reflection": {
     icon: Heart,
     title: "Gratitude Reflection",
@@ -129,6 +107,30 @@ const interventionLookup: Record<string, Intervention> = {
   },
 }
 
+const gunaNodes: GunaNode[] = [
+  {
+    id: 1,
+    name: "Sattva",
+    icon: Sun,
+    color: "from-amber-200 to-amber-100",
+    description: "Calm clarity, balance, and empathy",
+  },
+  {
+    id: 2,
+    name: "Rajas",
+    icon: Flame,
+    color: "from-amber-400 to-orange-300",
+    description: "Motivation, passion, and purposeful action",
+  },
+  {
+    id: 3,
+    name: "Tamas",
+    icon: Moon,
+    color: "from-orange-600 to-rose-500",
+    description: "Rest, reflection, and steady grounding",
+  },
+]
+
 const suggestedPrompts = [
   "I'm feeling anxious and need to settle",
   "Help me understand my emotions",
@@ -166,14 +168,26 @@ export default function ChittaHome() {
     ? summary.dominant.charAt(0).toUpperCase() + summary.dominant.slice(1)
     : null
 
-  const suggestedInterventions = useMemo<Intervention[]>(() => {
-    if (!latest || latest.recommendedInterventionIds.length === 0) {
-      return defaultInterventions
-    }
+  const suggestedInterventions = useMemo<InterventionSuggestion[]>(() => {
+    const fallbackInterventionIds = ["gratitude-reflection", "calming-breath", "focus-mantra", "gentle-movement"]
+    const recommendationIds = latest?.recommendedInterventionIds && latest.recommendedInterventionIds.length > 0
+      ? latest.recommendedInterventionIds
+      : fallbackInterventionIds
 
-    return latest.recommendedInterventionIds.map((id) => {
+    const buildSuggestion = (id: string): InterventionSuggestion => {
       const preset = interventionLookup[id]
-      if (preset) return preset
+      const definition = getInterventionDefinition(id)
+      const durationLabel = definition ? formatDurationLabel(definition.totalDuration) : preset?.duration ?? "5 min"
+
+      if (preset) {
+        return {
+          slug: id,
+          icon: preset.icon,
+          title: preset.title,
+          subtitle: preset.subtitle,
+          duration: durationLabel,
+        }
+      }
 
       const title = id
         .split("-")
@@ -181,12 +195,15 @@ export default function ChittaHome() {
         .join(" ")
 
       return {
+        slug: id,
         icon: Sparkles,
         title,
         subtitle: "A personalized ritual tuned to your check-in",
-        duration: "5 min",
+        duration: durationLabel,
       }
-    })
+    }
+
+    return recommendationIds.map(buildSuggestion)
   }, [latest])
 
   const [selectedGuna, setSelectedGuna] = useState<string | null>(null)
@@ -337,6 +354,21 @@ export default function ChittaHome() {
               </CardContent>
             </Card>
 
+            <Card className="bg-gradient-to-br from-orange-500/10 via-white to-amber-100/40 backdrop-blur-md shadow-lg">
+              <CardContent className="flex flex-col gap-3 p-6">
+                <p className="text-xs uppercase tracking-[0.3em] text-orange-500">Guided Practices</p>
+                <h3 className="font-serif text-2xl text-slate-900">Deepen your reset ritual</h3>
+                <p className="text-sm text-slate-600">
+                  Visit the interventions studio to choose breathwork, gratitude, and movement sessions tailored to your guna balance.
+                </p>
+                <Link href="/interventions">
+                  <Button className="bg-gradient-to-r from-orange-500 to-amber-500 text-white shadow-md hover:from-orange-600 hover:to-amber-600">
+                    Open Interventions
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+
             <Card className="bg-white/80 backdrop-blur-md shadow-lg">
               <CardHeader className="border-b border-orange-100/80 bg-gradient-to-r from-white to-amber-50">
                 <CardTitle className="flex items-center text-lg text-slate-900">
@@ -345,11 +377,10 @@ export default function ChittaHome() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 p-4">
-                {suggestedInterventions.map((intervention, index) => {
+                {suggestedInterventions.map((intervention) => {
                   const Icon = intervention.icon
-                  const interventionId = latest?.recommendedInterventionIds[index] || `intervention-${index}`
                   return (
-                    <Link key={intervention.title} href={`/interventions/${interventionId}`}>
+                    <Link key={intervention.slug} href={`/interventions/${intervention.slug}`}>
                       <Button
                         variant="outline"
                         className="flex w-full items-center justify-start gap-3 rounded-xl border-orange-200/70 bg-white/60 p-4 text-left text-slate-800 shadow-sm transition-all hover:translate-y-[-2px] hover:border-orange-300 hover:bg-orange-50"
@@ -393,11 +424,6 @@ export default function ChittaHome() {
                   <Link href="/insights">
                     <Button variant="outline" className="border-orange-200 text-slate-700 hover:bg-orange-100">
                       View Insights
-                    </Button>
-                  </Link>
-                  <Link href="/interventions">
-                    <Button variant="ghost" className="text-slate-700 hover:bg-orange-100">
-                      Explore Practices
                     </Button>
                   </Link>
                 </div>
