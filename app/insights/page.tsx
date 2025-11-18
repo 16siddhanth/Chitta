@@ -4,13 +4,14 @@ import { useMemo } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { ArrowLeft, TrendingUp, Calendar, Target, Activity } from "lucide-react"
+import { ArrowLeft, TrendingUp, Calendar, Target, Activity, Info } from "lucide-react"
 import Link from "next/link"
 import { formatDistanceToNow } from "date-fns"
 
 import { EmotionalTrends } from "@/components/emotional-trends"
 import { useEmotionalData } from "@/hooks/use-emotional-data"
 import { getInterventionDefinition } from "@/lib/interventions"
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 
 const gunaLabels: Record<string, string> = {
   sattva: "Sattva",
@@ -105,7 +106,31 @@ export default function InsightsPage() {
               </Button>
             </Link>
             <div>
-              <h1 className="font-serif text-xl sm:text-2xl font-bold">Emotional Insights</h1>
+              <div className="flex items-center gap-2">
+                <h1 className="font-serif text-xl sm:text-2xl font-bold">Emotional Insights</h1>
+                <TooltipProvider delayDuration={150}>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7 text-muted-foreground"
+                        aria-label="Open the Vedic model reference"
+                        asChild
+                      >
+                        <Link href="/docs/vedic-model" target="_blank" rel="noreferrer" prefetch={false}>
+                          <Info className="h-4 w-4" />
+                        </Link>
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent align="start">
+                      <p className="max-w-[200px] text-xs">
+                        View the tri-guna formulas and scripture lookup that inform these insights.
+                      </p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
               <p className="text-sm text-muted-foreground">
                 {hasEntries ? "Your journey of self-awareness" : "Check in daily to unlock personalized insights"}
               </p>

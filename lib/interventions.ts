@@ -626,6 +626,73 @@ export const getInterventionMeta = (id: string) => {
   }
 }
 
+export type InterventionScriptureReference = {
+  source: string
+  verses: string[]
+  theme: string
+  summary: string
+}
+
+export const INTERVENTION_SCRIPTURE_REFERENCES: Record<string, InterventionScriptureReference> = {
+  "gratitude-reflection": {
+    source: "Bhagavad Gita",
+    verses: ["17.15", "10.41"],
+    theme: "Speech that is truthful, pleasant, and honours the sacred in everyone",
+    summary:
+      "Encourages appreciative journaling so sattvic speech (satya, priya) steadies the heart before action.",
+  },
+  "mindful-awareness": {
+    source: "Bhagavad Gita",
+    verses: ["6.10", "6.26"],
+    theme: "Seated meditation that repeatedly returns the mind to still awareness",
+    summary: "Guides dharana/dhyana by noticing distraction and gently returning to breath anchored presence.",
+  },
+  "vision-clarity": {
+    source: "Bhagavad Gita",
+    verses: ["2.41", "18.45"],
+    theme: "Single-pointed purpose aligned with one’s swadharma",
+    summary: "Visualization session reconnects the practitioner with steady intention so sattva can lead decisions.",
+  },
+  "alternate-nostril": {
+    source: "Bhagavad Gita",
+    verses: ["4.29", "5.27-28"],
+    theme: "Pranayama that balances prana and withdraws the senses before contemplation",
+    summary: "Structured nostril alternation channels rajasic spikes into a balanced, inward turning current.",
+  },
+  "calming-breath": {
+    source: "Bhagavad Gita",
+    verses: ["4.29"],
+    theme: "Breath offered as a sacrificial act to quiet the nervous system",
+    summary: "Lengthening the exhale follows the Gita’s pranayama guidance to settle the fire of rajas.",
+  },
+  "focus-mantra": {
+    source: "Bhagavad Gita",
+    verses: ["8.13", "9.14"],
+    theme: "Japa of Om with unwavering devotion",
+    summary: "Transforms rajasic drive into mantra repetition so awareness rests on a single vibration.",
+  },
+  "energizing-breath": {
+    source: "Bhagavad Gita",
+    verses: ["3.30", "6.16-17"],
+    theme: "Disciplined action and moderated habits to overcome inertia",
+    summary: "Invigorating breath and movement disperse tamasic heaviness while staying aligned with purposeful effort.",
+  },
+  "body-scan-activation": {
+    source: "Bhagavad Gita",
+    verses: ["6.11-13"],
+    theme: "Awareness traveling the body from root to crown in a steady posture",
+    summary: "Sequential attention awakens each locus of energy so tamas can lift without agitation.",
+  },
+  "gentle-movement": {
+    source: "Bhagavad Gita",
+    verses: ["3.7", "6.16"],
+    theme: "Mindful action offered without attachment",
+    summary: "Light movement practices invite rajasic vitality to break tamasic inertia while honoring moderation.",
+  },
+}
+
+export const getInterventionScriptureReference = (id: string) => INTERVENTION_SCRIPTURE_REFERENCES[id]
+
 export const getInterventionPalette = (guna: InterventionGuna) => {
   switch (guna) {
     case "sattva":
