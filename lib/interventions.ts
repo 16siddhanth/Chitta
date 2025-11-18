@@ -1,3 +1,6 @@
+import type { LucideIcon } from "lucide-react"
+import { Flower2, Wind, Heart, Brain, Sparkles, Flame, Droplet, Moon, Sun } from "lucide-react"
+
 import type { EmotionalEntry, InterventionSession } from "./storage"
 
 export type InterventionType = "breathing" | "meditation" | "journaling" | "movement"
@@ -530,6 +533,70 @@ const interventionRegistry: Record<string, InterventionDefinition> = {
         type: "reflection",
       },
     ],
+  },
+}
+
+export type InterventionPresetMeta = {
+  icon: LucideIcon
+  title: string
+  subtitle: string
+  duration?: string
+}
+
+export const INTERVENTION_PRESETS: Record<string, InterventionPresetMeta> = {
+  "gratitude-reflection": {
+    icon: Heart,
+    title: "Gratitude Reflection",
+    subtitle: "Note three moments of appreciation",
+    duration: "5 min",
+  },
+  "mindful-awareness": {
+    icon: Brain,
+    title: "Mindful Awareness",
+    subtitle: "Observe sensations with gentle curiosity",
+    duration: "4 min",
+  },
+  "vision-clarity": {
+    icon: Sun,
+    title: "Vision Clarity",
+    subtitle: "Reconnect with your guiding intention",
+    duration: "6 min",
+  },
+  "alternate-nostril": {
+    icon: Wind,
+    title: "Alternate Nostril Breath",
+    subtitle: "Balance energy through focused breath",
+    duration: "3 min",
+  },
+  "calming-breath": {
+    icon: Flower2,
+    title: "Calming Breath",
+    subtitle: "Slow and soften the nervous system",
+    duration: "2 min",
+  },
+  "focus-mantra": {
+    icon: Sparkles,
+    title: "Focus Mantra",
+    subtitle: "Anchor attention with a steady phrase",
+    duration: "4 min",
+  },
+  "energizing-breath": {
+    icon: Flame,
+    title: "Energizing Breath",
+    subtitle: "Invite warmth and uplift",
+    duration: "3 min",
+  },
+  "body-scan-activation": {
+    icon: Droplet,
+    title: "Body Scan Activation",
+    subtitle: "Wake up sleepy energy",
+    duration: "6 min",
+  },
+  "gentle-movement": {
+    icon: Moon,
+    title: "Gentle Movement",
+    subtitle: "Unwind tension with mindful stretches",
+    duration: "8 min",
   },
 }
 

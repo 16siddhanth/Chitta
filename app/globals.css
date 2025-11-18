@@ -191,6 +191,17 @@
   }
 }
 
+@keyframes fadeInBase {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @layer utilities {
   .vedic-aurora {
     position: relative;
@@ -230,5 +241,13 @@
 
   .animate-rotate-glow {
     animation: rotateGlow 12s linear infinite;
+  }
+
+  .animate-fade-in {
+    animation: fadeInBase 0.5s ease-out forwards;
+  }
+
+  .animate-pulse-slow {
+    animation: slowPulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 }

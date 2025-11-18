@@ -9,6 +9,11 @@ type ChatMessage = {
   content: string
 }
 
+type GeminiContent = {
+  role: string
+  parts: Array<{ text: string }>
+}
+
 const systemPrompt = `You are Aaranya, a compassionate AI companion inspired by Vedic wisdom and philosophy. Your role is to provide gentle, supportive guidance for mental wellbeing through the lens of ancient wisdom adapted for modern life.
 
 Core Principles:
@@ -157,15 +162,26 @@ const formatModeration = (moderation: ModerationPayload | undefined): string => 
   return pieces.length ? pieces.join(" | ") : "No moderation flags detected."
 }
 
-const formatConversation = (messages: ChatMessage[]): string => {
-  if (!messages.length) {
-    return "No prior conversation. Offer a warm greeting and invite sharing."
+const buildConversationContents = (messages: ChatMessage[]): GeminiContent[] => {
+  const recentMessages = messages.slice(-20)
+
+  if (!recentMessages.length) {
+    return [
+      {
+        role: "user",
+        parts: [
+          {
+            text: "Please greet the user warmly as Aaranya and invite them to share what is present for them right now.",
+          },
+        ],
+      },
+    ]
   }
 
-  return messages
-    .slice(-20)
-    .map((message) => `${message.role === "assistant" ? "Aaranya" : "User"}: ${message.content}`)
-    .join("\n")
+  return recentMessages.map((message) => ({
+    role: message.role === "assistant" ? "model" : "user",
+    parts: [{ text: message.content }],
+  }))
 }
 
 export async function POST(req: Request) {
@@ -186,33 +202,28 @@ export async function POST(req: Request) {
 
   const client = new GoogleGenAI({ apiKey })
 
-  const prompt = `${systemPrompt}
+  const instructionSections = [
+    systemPrompt,
+    consentGranted
+      ? "Consent status: User granted contextual sharing. You may reference their prior reflections when it feels supportive."
+      : "Consent status: User declined contextual sharing. Base responses only on the live conversation, not stored memory.",
+    `Emotional context summary:\n${formatContext(context)}`,
+    `Chat memory notes:\n${formatInsights(insights)}`,
+    `Safety considerations:\n${formatModeration(moderation)}`,
+    "Guidance: Continue the dialogue in sequence, avoid repeating prior replies verbatim, and close with a gentle invitation or reflective question.",
+  ]
 
-Consent status: ${consentGranted ? "User granted consent for contextual sharing." : "User declined contextual sharing. Base your reply solely on the active conversation and universal guidance."}
+  const systemInstruction = instructionSections.filter(Boolean).join("\n\n")
 
-Context:
-${formatContext(context)}
-
-Memory:
-${formatInsights(insights)}
-
-Safety Notes:
-${formatModeration(moderation)}
-
-Conversation so far:
-${formatConversation(messages)}
-
-Respond as Aaranya with empathy, weaving in relevant context when helpful. Offer practical practices or reflections and end with a gentle question or invitation.`
+  const contents: GeminiContent[] = [
+    { role: "system", parts: [{ text: systemInstruction }] },
+    ...buildConversationContents(messages),
+  ]
 
   try {
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash",
-      contents: [
-        {
-          role: "user",
-          parts: [{ text: prompt }],
-        },
-      ],
+      contents,
     })
 
     const text = (response?.text ?? "").trim()
