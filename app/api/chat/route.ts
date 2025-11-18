@@ -215,15 +215,18 @@ export async function POST(req: Request) {
 
   const systemInstruction = instructionSections.filter(Boolean).join("\n\n")
 
-  const contents: GeminiContent[] = [
-    { role: "system", parts: [{ text: systemInstruction }] },
-    ...buildConversationContents(messages),
-  ]
+  const systemInstructionPayload: GeminiContent = {
+    role: "user",
+    parts: [{ text: systemInstruction }],
+  }
+
+  const contents: GeminiContent[] = buildConversationContents(messages)
 
   try {
     const response = await client.models.generateContent({
       model: "gemini-2.5-flash",
       contents,
+      systemInstruction: systemInstructionPayload,
     })
 
     const text = (response?.text ?? "").trim()
