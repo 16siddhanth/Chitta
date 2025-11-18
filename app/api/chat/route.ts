@@ -1,5 +1,6 @@
 import { GoogleGenAI } from "@google/genai"
 import { type ChatContext } from "@/lib/chat-context"
+import { buildHelplineResponse, checkForCrisisLanguage, notifySafetyTeam } from "@/lib/safety"
 
 // Allow responses up to 30 seconds which mirrors the previous streaming config
 export const maxDuration = 30
@@ -201,6 +202,30 @@ export async function POST(req: Request) {
   }
 
   const client = new GoogleGenAI({ apiKey })
+
+  const latestUserMessage = [...messages].reverse().find((message) => message.role === "user")
+  if (latestUserMessage) {
+    const safetyCheck = checkForCrisisLanguage(latestUserMessage.content)
+    if (safetyCheck.flagged && safetyCheck.level) {
+      await notifySafetyTeam({
+        level: safetyCheck.level,
+        matches: safetyCheck.matches,
+        message: latestUserMessage.content,
+      })
+
+      return new Response(
+        JSON.stringify({
+          message: buildHelplineResponse(safetyCheck.level),
+          safetyLevel: safetyCheck.level,
+          matches: safetyCheck.matches,
+        }),
+        {
+          status: 200,
+          headers: { "Content-Type": "application/json" },
+        },
+      )
+    }
+  }
 
   const instructionSections = [
     systemPrompt,
