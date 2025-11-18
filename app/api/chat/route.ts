@@ -244,8 +244,15 @@ export async function POST(req: Request) {
     })
   } catch (error) {
     console.error("Failed to generate Gemini response", error)
-    return new Response(JSON.stringify({ error: "Failed to generate response from Gemini." }), {
-      status: 500,
+
+    const status = typeof error === "object" && error && "status" in error ? Number(error.status) || 500 : 500
+    const isOverloaded = status === 503
+    const friendlyMessage = isOverloaded
+      ? "Gemini is momentarily overloaded. Please wait a few seconds and try again."
+      : "Failed to generate response from Gemini."
+
+    return new Response(JSON.stringify({ error: friendlyMessage, status }), {
+      status: isOverloaded ? 503 : 500,
       headers: { "Content-Type": "application/json" },
     })
   }
