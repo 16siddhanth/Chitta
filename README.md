@@ -3,7 +3,7 @@
 # 🌿 Chitta — Vedic-Inspired Emotional Wellbeing
 
 Mindful wellbeing powered by the tri-guna model, compassionate AI, and privacy-first local storage.
-Video Presentation : https://youtu.be/DhdUixEPZcs
+ Video Presentation : https://youtu.be/DhdUixEPZcs
 </div>
 
 ## Table of Contents
