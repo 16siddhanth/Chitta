@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🌿 Chitta — Vedic-Inspired Emotional Studio
+# 🌿 Chitta — Vedic-Inspired Emotional Wellbeing
 
 Mindful wellbeing powered by the tri-guna model, compassionate AI, and privacy-first local storage.
 
